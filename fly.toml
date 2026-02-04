@@ -1,0 +1,23 @@
+app = "jasthink-cool-water-9607"
+primary_region = "cdg"
+
+[build]
+dockerfile = "Dockerfile"
+
+[env]
+SPRING_WEB_CORS_ALLOWED_ORIGINS = "https://jasthink-cool-water-9607.fly.dev,https://frontend-rough-night-4307.fly.dev"
+PORT = "8081"
+SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION = "true"
+SPRING_JPA_HIBERNATE_DDL_AUTO = "update"
+SPRING_JPA_SHOW_SQL = "false"
+
+[http_service]
+auto_stop_machines = false
+force_https = true
+internal_port = 8081
+min_machines_running = 1
+
+[http_service.concurrency]
+hard_limit = 200
+soft_limit = 100
+type = "connections"
