@@ -4,8 +4,6 @@ import com.example.backend.enums.Role;
 import com.example.backend.exceptions.IllegalActionException;
 import com.example.backend.models.UserModel;
 import com.example.backend.repositories.PlayerAnswerRepository;
-import com.example.backend.repositories.PlayerRepository;
-import com.example.backend.repositories.SessionRepository;
 import com.example.backend.repositories.StatisticsRepository;
 import com.example.backend.responses.PlayersCorrectAnswerPercentage;
 import com.example.backend.responses.QuestionAverageTime;
@@ -30,7 +28,7 @@ public class AnalyticsService {
 
     private void checkUser(UUID sessionId, String email) {
         UserModel user = sessionService.getSessionById(sessionId).getHost();
-        if (!user.getEmail().equals(email) && !user.getRole().equals(Role.ADMIN))
+        if (!user.getEmail().equals(email) && !user.getRole().getName().equals(Role.ADMIN.name()))
             throw new IllegalActionException("Current user cannot access to this action!");
     }
 

@@ -1,4 +1,4 @@
-package com.example.backend.controllers;
+package com.example.backend.controllers.user;
 
 import com.example.backend.exceptions.IllegalActionException;
 import com.example.backend.responses.ApiResponse;
@@ -23,7 +23,7 @@ public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'CREATOR')")
+    @PreAuthorize("hasAuthority('session-stats:get')")
     @GetMapping("/{sessionId}")
     public ResponseEntity<ApiResponse> getSessionStats(@PathVariable UUID sessionId) {
         try {
@@ -44,7 +44,7 @@ public class AnalyticsController {
         }
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'CREATOR')")
+    @PreAuthorize("hasAuthority('session-question-correctness:get')")
     @GetMapping("/percentage/question/{sessionId}")
     public ResponseEntity<ApiResponse> getQuestionCorrectness(@PathVariable UUID sessionId) {
         try {
@@ -64,7 +64,7 @@ public class AnalyticsController {
         }
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'CREATOR')")
+    @PreAuthorize("hasAuthority('session-answer-percentage:get')")
     @GetMapping("/percentage/session/{sessionId}")
     public ResponseEntity<ApiResponse> getSessionAnswerPercentage(@PathVariable UUID sessionId) {
         try {
@@ -85,7 +85,7 @@ public class AnalyticsController {
         }
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'CREATOR')")
+    @PreAuthorize("hasAuthority('session-player-number:get')")
     @GetMapping("/number/players/{sessionId}")
     public ResponseEntity<ApiResponse> getPlayersNumberPerSession(@PathVariable UUID sessionId) {
         try {
@@ -106,7 +106,7 @@ public class AnalyticsController {
         }
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'CREATOR')")
+    @PreAuthorize("hasAuthority('session-all-answer-percentage:get')")
     @GetMapping("/percentage/answer")
     public ResponseEntity<ApiResponse> getAllAnswerPercentage() {
         try {
@@ -123,12 +123,12 @@ public class AnalyticsController {
         }
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'CREATOR')")
+    @PreAuthorize("hasAuthority('session-all-number:get')")
     @GetMapping("/number/session")
     public ResponseEntity<ApiResponse> getNumberSession() {
         try {
             return ResponseEntity.ok(new ApiResponse(
-                    "All correct answer percentage in platform!",
+                    "The number all sessions in platform!",
                     analyticsService.getNumberSession())
             );
         } catch (AuthenticationException ex) {
@@ -140,7 +140,7 @@ public class AnalyticsController {
         }
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'CREATOR')")
+    @PreAuthorize("hasAuthority('session-answer-average-time:get')")
     @GetMapping("/time/session/{sessionId}")
     public ResponseEntity<ApiResponse> getSessionAnswerAverageTime(@PathVariable UUID sessionId) {
         try {
@@ -161,7 +161,7 @@ public class AnalyticsController {
         }
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'CREATOR')")
+    @PreAuthorize("hasAuthority('session-question-answer-average-time:get')")
     @GetMapping("/time/question/{sessionId}")
     public ResponseEntity<ApiResponse> getQuestionAnswerAverageTime(@PathVariable UUID sessionId) {
         try {

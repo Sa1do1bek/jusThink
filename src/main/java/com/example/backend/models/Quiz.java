@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
@@ -20,7 +21,12 @@ import java.util.UUID;
 @Table(name = "quizzes")
 public class Quiz {
     @Id
-    @GeneratedValue
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(
+            name = "UUID",
+            strategy = "org.hibernate.id.UUIDGenerator"
+    )
+    @Column(updatable = false, nullable = false)
     private UUID id;
     private String title;
     private String description;
@@ -30,6 +36,10 @@ public class Quiz {
 
     @UpdateTimestamp
     private LocalDate updatedAt;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "image_id", referencedColumnName = "id")
+    private Image image;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
@@ -45,4 +55,12 @@ public class Quiz {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private QuizMode mode = QuizMode.PUBLIC;
+
+    @ManyToMany
+    @JoinTable(
+            name = "quiz_categories",
+            joinColumns = @JoinColumn(name = "quiz_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
+    private List<Category> categories;
 }

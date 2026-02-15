@@ -7,11 +7,12 @@ import com.example.backend.exceptions.ResourceNotFoundException;
 import com.example.backend.models.Image;
 import com.example.backend.models.UserModel;
 import com.example.backend.repositories.ImageRepository;
+import com.example.backend.repositories.RoleRepository;
 import com.example.backend.repositories.UserRepository;
 import com.example.backend.requests.CreateUserRequest;
 import com.example.backend.requests.UpdateUserRequest;
 import com.example.backend.responses.UserResponse;
-import com.example.backend.services.auth.email.EmailVerificationService;
+import com.example.backend.services.authentication.email.EmailVerificationService;
 import com.example.backend.services.image.ImageStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,9 +20,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.mail.MessagingException;
 import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -29,9 +29,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserService implements IUserService{
 
-    private final UserRepository userRepository;
-    private final ImageRepository imageRepository;
     private final ImageStorageService storage;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final ImageRepository imageRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailVerificationService emailVerificationService;
 
@@ -43,7 +44,7 @@ public class UserService implements IUserService{
 
     @Override
     public List<UserModel> getAllUsers(String email) throws IllegalAccessException {
-        if (!this.getUserByEmail(email).getRole().equals(Role.ADMIN))
+        if (!this.getUserByEmail(email).getRole().getName().equals(Role.ADMIN.name()))
             throw new IllegalAccessException("Current user cannot access to this action!");
 
         return userRepository.findAll();
@@ -72,27 +73,33 @@ public class UserService implements IUserService{
         if (emailError != null)
             throw new IllegalActionException(emailError);
 
-        if (request.role() == Role.ADMIN)
+        if (request.role().getName().equals(Role.ADMIN.name()))
             throw new IllegalActionException("Current user cannot access to this action!");
 
-        return Optional.of(request)
-                .filter(req -> !userRepository.existsByEmail(req.email()))
-                .map(req -> {
-                    UserModel user = new UserModel();
-                    user.setNickname(req.nickName());
-                    user.setEmail(req.email());
-                    user.setPassword(passwordEncoder.encode(req.password()));
-                    user.setRole(Role.valueOf(req.role().toString().toUpperCase(Locale.ROOT)));
-                    user.setEmailVerified(false);
+        if (userRepository.existsByEmail(request.email()))
+            throw new AlreadyExistsException(
+                    "User with the email " + request.email() + " exists!"
+            );
 
-                    user = userRepository.save(user);
-                    emailVerificationService.createVerificationToken(user);
-                    return user;
+        com.example.backend.models.Role role = roleRepository.findByName(request.role().getName())
+                .orElseThrow(() -> new IllegalActionException("Role not found"));
 
-                }).orElseThrow(() ->
-                        new AlreadyExistsException(
-                                "User with the email of " + request.email() + " exists!"
-                        ));
+        UserModel user = new UserModel();
+        user.setNickname(request.nickName());
+        user.setEmail(request.email());
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setRole(role);
+        user.setEmailVerified(false);
+
+        user = userRepository.save(user);
+
+        try {
+            emailVerificationService.createVerificationToken(user);
+        } catch (MessagingException e) {
+            throw new RuntimeException(e);
+        }
+
+        return user;
     }
 
 
@@ -109,7 +116,7 @@ public class UserService implements IUserService{
 
         UserModel currentUser = getUserByEmail(email);
         if (!user.getId().equals(currentUser.getId())
-                && currentUser.getRole() != Role.ADMIN) {
+                && !currentUser.getRole().getName().equals(Role.ADMIN.name())) {
             throw new IllegalAccessException("Current user cannot access to this action!");
         }
 
@@ -124,7 +131,7 @@ public class UserService implements IUserService{
             user.setPassword(passwordEncoder.encode(request.password()));
         }
         if (request.nickName() != null && !request.nickName().isBlank()) {
-            user.setPassword(passwordEncoder.encode(request.nickName()));
+            user.setNickname(request.nickName());
         }
 
         if (imageFile != null && !imageFile.isEmpty()) {
@@ -142,7 +149,7 @@ public class UserService implements IUserService{
 
     @Override
     public void deleteUser(UUID userId, String email) throws IllegalAccessException {
-        if (!this.getUserByEmail(email).getRole().equals(Role.ADMIN))
+        if (!this.getUserByEmail(email).getRole().getName().equals(Role.ADMIN.name()))
             throw new IllegalAccessException("Current user cannot access to this action!");
 
         userRepository.findById(userId).ifPresentOrElse(userRepository :: delete, () -> {
@@ -156,7 +163,7 @@ public class UserService implements IUserService{
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         UserModel currentUser = getUserByEmail(email);
-        if ((!user.getId().equals(currentUser.getId())) && (currentUser.getRole() != Role.ADMIN))
+        if ((!user.getId().equals(currentUser.getId())) && (!currentUser.getRole().getName().equals(Role.ADMIN.name())))
             try {
                 throw new IllegalAccessException("Current user cannot access to this action!");
             } catch (IllegalAccessException e) {

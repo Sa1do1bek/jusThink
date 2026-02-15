@@ -1,4 +1,4 @@
-package com.example.backend.services.auth.login;
+package com.example.backend.services.authentication.login;
 
 import com.example.backend.requests.LoginRequest;
 import com.example.backend.responses.LoginResponse;

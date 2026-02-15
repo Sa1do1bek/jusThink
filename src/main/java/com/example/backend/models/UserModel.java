@@ -1,6 +1,5 @@
 package com.example.backend.models;
 
-import com.example.backend.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,9 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import java.time.LocalDate;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Getter
@@ -57,19 +54,35 @@ public class UserModel implements UserDetails {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Player> players;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "actor", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AuditLog> auditLogs;
 
-    @Enumerated(EnumType.STRING)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id")
     private Role role;
+
 
     @Column(nullable = false)
     private boolean isEmailVerified = false;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+
+        Set<SimpleGrantedAuthority> authorities = new HashSet<>();
+
+        authorities.add(
+                new SimpleGrantedAuthority("ROLE_" + role.getName())
+        );
+
+        role.getPermissions().forEach(permission ->
+                authorities.add(
+                        new SimpleGrantedAuthority(permission.getName())
+                )
+        );
+
+        return authorities;
     }
+
 
     @Override
     public String getUsername() {

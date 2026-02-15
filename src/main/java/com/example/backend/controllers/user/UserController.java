@@ -1,15 +1,16 @@
-package com.example.backend.controllers;
+package com.example.backend.controllers.user;
 
 import com.example.backend.requests.UpdateUserRequest;
 import com.example.backend.responses.ApiResponse;
 import com.example.backend.responses.UserResponse;
+import com.example.backend.services.analytics.excel.ExcelService;
 import com.example.backend.services.image.ImageStorageService;
 import com.example.backend.services.user.UserService;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,9 +19,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,9 +28,10 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final ExcelService excelService;
     private final ImageStorageService storage;
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'CREATOR', 'USER')")
+    @PreAuthorize("hasAuthority('user:update')")
     @PutMapping("/{userId}")
     public ResponseEntity<ApiResponse> updateUserById(
             @PathVariable UUID userId,
@@ -55,14 +54,12 @@ public class UserController {
         } catch (IllegalAccessException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new ApiResponse(e.getMessage(), null));
-        } catch (JsonMappingException e) {
-            throw new RuntimeException(e);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAuthority('user-all:get')")
     @GetMapping
     public ResponseEntity<ApiResponse> getAllUsers() {
         try {
@@ -81,6 +78,7 @@ public class UserController {
         }
     }
 
+    @PreAuthorize("hasAuthority('user:delete')")
     @DeleteMapping("/{userId}")
     public ResponseEntity<ApiResponse> deleteUserById(@PathVariable UUID userId) {
         try {
@@ -96,6 +94,7 @@ public class UserController {
         }
     }
 
+    @PreAuthorize("hasAuthority('user-image-by-id:delete')")
     @DeleteMapping("/{userId}/image")
     public ResponseEntity<ApiResponse> deleteImageByUserId(@PathVariable UUID userId) {
         try {
@@ -108,6 +107,8 @@ public class UserController {
         }
     }
 
+
+    @PreAuthorize("hasAuthority('user-image:get')")
     @GetMapping("/media/images/image/{path}")
     public ResponseEntity<FileSystemResource> getImage(@PathVariable String path) {
         try {
@@ -119,6 +120,21 @@ public class UserController {
                     )
                     .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (RuntimeException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @PreAuthorize("hasAuthority('user-all:export')")
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportAllUsers() {
+        try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            byte[] excelFile = excelService.exportUsersToExcel(email);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=users.xlsx")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(excelFile);
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

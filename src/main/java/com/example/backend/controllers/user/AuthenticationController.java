@@ -1,27 +1,30 @@
-package com.example.backend.controllers;
+package com.example.backend.controllers.user;
 
 import com.example.backend.exceptions.IllegalActionException;
+import com.example.backend.exceptions.TooManyRequestsException;
 import com.example.backend.requests.CreateUserRequest;
 import com.example.backend.requests.LoginRequest;
+import com.example.backend.requests.ResendRequest;
 import com.example.backend.responses.ApiResponse;
-import com.example.backend.services.auth.login.LoginService;
-import com.example.backend.services.auth.email.EmailVerificationService;
+import com.example.backend.services.authentication.login.LoginService;
+import com.example.backend.services.authentication.email.EmailVerificationService;
 import com.example.backend.services.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServlet;
+import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("${api.prefix}/auth")
-public class AuthController {
+public class AuthenticationController {
 
     private final EmailVerificationService emailVerificationService;
     private final LoginService loginService;
@@ -67,6 +70,23 @@ public class AuthController {
         } catch (AuthenticationException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ApiResponse("Authentication failed", null));
+        }
+    }
+
+    @PostMapping("/resend-token")
+    public ResponseEntity<ApiResponse> resendEmailVerificationToken(@RequestBody ResendRequest request) {
+        try {
+            emailVerificationService.resendVerificationToken(request.email());
+            return ResponseEntity.ok(new ApiResponse(
+                    "Verification token resent successfully!", null)
+
+            );
+        } catch (TooManyRequestsException ex) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(new ApiResponse(ex.getMessage(), null));
+        } catch (MessagingException ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(ex.getMessage(), null));
         }
     }
 }

@@ -1,7 +1,7 @@
 package com.example.backend.responses;
 
-import com.example.backend.enums.Role;
 import com.example.backend.models.Image;
+import com.example.backend.models.Role;
 
 import java.time.LocalDate;
 import java.util.UUID;

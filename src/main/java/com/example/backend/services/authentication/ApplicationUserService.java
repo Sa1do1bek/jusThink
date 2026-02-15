@@ -1,4 +1,4 @@
-package com.example.backend.services.auth;
+package com.example.backend.services.authentication;
 
 import com.example.backend.repositories.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;

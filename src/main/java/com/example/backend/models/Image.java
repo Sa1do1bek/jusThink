@@ -33,4 +33,8 @@ public class Image {
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private UserModel user;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "quiz_id", referencedColumnName = "id")
+    private Quiz quiz;
 }

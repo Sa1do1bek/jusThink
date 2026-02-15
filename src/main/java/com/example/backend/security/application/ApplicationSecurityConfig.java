@@ -1,6 +1,6 @@
 package com.example.backend.security.application;
 
-import com.example.backend.services.auth.ApplicationUserService;
+import com.example.backend.services.authentication.ApplicationUserService;
 import com.example.backend.jwt.JwtEmailAndPasswordAuthenticationFilter;
 import com.example.backend.jwt.JwtVerifier;
 import com.example.backend.services.jwt.JwtService;
@@ -10,16 +10,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import static com.example.backend.enums.Role.*;
-
 @Configuration
 @EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
 
@@ -44,9 +44,9 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers("/ws/**", "/ws/info").permitAll()
                 .antMatchers("/", "index", "/css/*", "/js/*").permitAll()
-                .antMatchers("/api/jasThink/players/**", "/api/jasThink/auth/**").permitAll()
-                .antMatchers("/management/api/**").hasRole(ADMIN.name())
-                .antMatchers("/api/**").hasAnyRole(USER.name(), CREATOR.name(), ADMIN.name())
+                .antMatchers("/api/jasThink/players/**", "/api/jasThink/auth/**", "/api/jasThink/ai/**").permitAll()
+//                .antMatchers("/management/api/**").hasRole(ADMIN.name())
+//                .antMatchers("/api/**").hasAnyRole(USER.name(), CREATOR.name(), ADMIN.name(), SYSTEM.name())
                 .anyRequest().authenticated()
                 .and()
                 .sessionManagement()

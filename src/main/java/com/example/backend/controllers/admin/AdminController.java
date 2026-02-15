@@ -1,4 +1,4 @@
-package com.example.backend.controllers;
+package com.example.backend.controllers.admin;
 
 import com.example.backend.exceptions.ResourceNotFoundException;
 import com.example.backend.models.Quiz;
@@ -25,7 +25,7 @@ public class AdminController {
 
     private final QuizService quizService;
 
-    @PreAuthorize("hasAnyRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/quizzes/{quizId}")
     public ResponseEntity<ApiResponse> getQuizById(@PathVariable UUID quizId) {
         try {
@@ -46,7 +46,7 @@ public class AdminController {
                     .body(new ApiResponse(e.getMessage(), null));
         }
     }
-    @PreAuthorize("hasAnyRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/quizzes")
     public ResponseEntity<ApiResponse> getQuizAll() {
         try {

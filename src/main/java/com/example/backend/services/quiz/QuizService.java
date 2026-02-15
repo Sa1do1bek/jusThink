@@ -7,15 +7,18 @@ import com.example.backend.enums.Role;
 import com.example.backend.exceptions.IllegalActionException;
 import com.example.backend.exceptions.ResourceNotFoundException;
 import com.example.backend.models.*;
+import com.example.backend.repositories.ImageRepository;
 import com.example.backend.repositories.QuizRepository;
 import com.example.backend.requests.*;
 import com.example.backend.responses.QuizResponse;
 import com.example.backend.responses.QuizSafeResponse;
+import com.example.backend.services.image.ImageStorageService;
 import com.example.backend.services.session.SessionService;
 import com.example.backend.services.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,9 +27,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class QuizService implements IQuizService {
 
-    private final QuizRepository quizRepository;
     private final UserService userService;
+    private final ImageStorageService storage;
+    private final QuizRepository quizRepository;
     private final SessionService sessionService;
+    private final ImageRepository imageRepository;
 
     @Transactional(readOnly = true)
     public Object getQuizById(UUID id, String email) {
@@ -84,7 +89,7 @@ public class QuizService implements IQuizService {
     }
 
     @Transactional
-    public Quiz createQuiz(CreateQuizRequest request, String userEmail) {
+    public Quiz createQuiz(CreateQuizRequest request, String userEmail, MultipartFile imageFile) {
         Quiz quiz = new Quiz();
         quiz.setTitle(request.title());
         quiz.setDescription(request.description());
@@ -101,6 +106,16 @@ public class QuizService implements IQuizService {
                 .collect(Collectors.toList());
         if (validateQuestionOrders(questions))
             throw new IllegalActionException("Question orders are not correctly inputted!");
+
+        if (imageFile != null && !imageFile.isEmpty()) {
+            Image image = new Image();
+
+            image.setFileName(imageFile.getOriginalFilename());
+            image.setFileType(imageFile.getContentType());
+            image.setPath(storage.save(quiz.getId(), imageFile));
+
+            quiz.setImage(image);
+        }
 
         quizVersion.setQuestions(questions);
         quiz.setQuizVersions(new ArrayList<>(List.of(quizVersion)));
@@ -189,7 +204,7 @@ public class QuizService implements IQuizService {
     }
 
     @Transactional
-    public Quiz updateQuiz(UUID quizId, UpdateQuizRequest request, String email) {
+    public Quiz updateQuiz(UUID quizId, UpdateQuizRequest request, String email, MultipartFile imageFile) {
         Quiz oldQuiz = quizRepository.findById(quizId)
                 .filter(q -> q.getOwner().getEmail().equals(email))
                 .orElseThrow(() ->
@@ -216,6 +231,16 @@ public class QuizService implements IQuizService {
 
         if (validateQuestionOrders(mergedQuestions))
             throw new IllegalActionException("Question orders are not correctly inputted!");
+
+        if (imageFile != null && !imageFile.isEmpty()) {
+            Image image = new Image();
+
+            image.setFileName(imageFile.getOriginalFilename());
+            image.setFileType(imageFile.getContentType());
+            image.setPath(storage.save(oldQuiz.getId(), imageFile));
+
+            oldQuiz.setImage(image);
+        }
 
         newVersion.setQuestions(mergedQuestions);
         oldQuiz.getQuizVersions().add(newVersion);
@@ -376,7 +401,7 @@ public class QuizService implements IQuizService {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new ResourceNotFoundException("Quiz not found!"));
 
-        if (!quiz.getOwner().getEmail().equals(email) && !quiz.getOwner().getRole().equals(Role.ADMIN)) {
+        if (!quiz.getOwner().getEmail().equals(email) && !quiz.getOwner().getRole().getName().equals(Role.ADMIN.name())) {
             throw new IllegalActionException("Current user cannot delete this quiz!");
         }
 
@@ -406,5 +431,24 @@ public class QuizService implements IQuizService {
                 userService.converterToUserResponse(quiz.getOwner()),
                 quiz.getCreatedAt()
         );
+    }
+
+    public void deleteImageByQuizId(UUID quizId, String email) {
+        Quiz quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new ResourceNotFoundException("Quiz not found"));
+
+        UserModel currentUser = userService.getUserByEmail(email);
+        if ((!quiz.getOwner().getId().equals(currentUser.getId())) && (!currentUser.getRole().getName().equals(Role.ADMIN.name())))
+            try {
+                throw new IllegalAccessException("Current user cannot access to this action!");
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+
+        Image image = quiz.getImage();
+        if (image == null) return;
+
+        storage.delete(image.getPath());
+        imageRepository.delete(image);
     }
 }

@@ -23,13 +23,13 @@ public class ImageStorageService {
     @Value("${app.storage.images}")
     private String imageDir;
 
-    public String save(UUID userId, MultipartFile file) {
+    public String save(UUID id, MultipartFile file) {
         validate(file);
         try {
             Path dir = Paths.get(root, imageDir);
             Files.createDirectories(dir);
 
-            String filename = userId + ".webp";
+            String filename = id + ".webp";
             Path target = dir.resolve(filename);
 
             Files.copy(

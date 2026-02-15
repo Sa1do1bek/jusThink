@@ -1,4 +1,4 @@
-package com.example.backend.controllers;
+package com.example.backend.controllers.user;
 
 import com.example.backend.enums.SessionRole;
 import com.example.backend.exceptions.ResourceNotFoundException;
@@ -37,7 +37,7 @@ public class    SessionController {
     private final SimpMessagingTemplate messagingTemplate;
     private final JwtService jwtService;
 
-    @PreAuthorize("hasAnyRole('CREATOR', 'ADMIN', 'USER')")
+    @PreAuthorize("hasAuthority('session-by-id:get')")
     @GetMapping("/{sessionId}")
     public ResponseEntity<ApiResponse> getSessionById(@PathVariable UUID sessionId) {
         try {
@@ -54,7 +54,7 @@ public class    SessionController {
         }
     }
 
-    @PreAuthorize("hasAnyRole('CREATOR', 'ADMIN', 'USER')")
+    @PreAuthorize("hasAuthority('session-all:get')")
     @GetMapping
     public ResponseEntity<ApiResponse> getAllSessions() {
         try {
@@ -71,7 +71,7 @@ public class    SessionController {
         }
     }
 
-    @PreAuthorize("hasAnyRole('CREATOR', 'ADMIN')")
+    @PreAuthorize("hasAuthority('session:create')")
     @PostMapping
     public ResponseEntity<ApiResponse> createSession(@RequestBody CreateSessionRequest request) {
         try {
@@ -91,6 +91,7 @@ public class    SessionController {
         }
     }
 
+    @PreAuthorize("hasAuthority('session:start')")
     @PostMapping("/{sessionId}/start")
     public void startSession(@PathVariable UUID sessionId) {
         try {
@@ -100,6 +101,7 @@ public class    SessionController {
         }
     }
 
+    @PreAuthorize("hasAuthority('session-question:skip')")
     @PostMapping("/{sessionId}/skip")
     public void skipCurrentQuestion(@PathVariable UUID sessionId) {
         try {
@@ -109,6 +111,7 @@ public class    SessionController {
         }
     }
 
+    @PreAuthorize("hasAuthority('session:end')")
     @PostMapping("/{sessionId}/end")
     public void endSession(@PathVariable UUID sessionId) {
         try {

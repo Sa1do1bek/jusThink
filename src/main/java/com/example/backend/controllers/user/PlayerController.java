@@ -1,4 +1,4 @@
-package com.example.backend.controllers;
+package com.example.backend.controllers.user;
 
 import com.example.backend.enums.EventMessageType;
 import com.example.backend.enums.SessionRole;

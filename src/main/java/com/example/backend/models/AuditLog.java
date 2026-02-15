@@ -2,13 +2,14 @@ package com.example.backend.models;
 
 import com.example.backend.enums.Action;
 import com.example.backend.enums.ResourceType;
-import com.example.backend.enums.Role;
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TypeDef;
 
 import javax.persistence.*;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -16,6 +17,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @Entity
+@TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
 @Table(
         name = "audit_logs",
         indexes = {
@@ -45,14 +47,14 @@ public class AuditLog {
     @Column(nullable = false)
     private Action action;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role actorRole;
+    private String actorRole;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
     private UserModel actor;
 
+    @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
     private String metadata;
 
