@@ -4,6 +4,7 @@ import com.example.backend.responses.ApiResponse;
 import com.example.backend.services.ai.LLMService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,6 +20,7 @@ public class AiController {
         this.llmService = llmService;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/quiz")
     public ResponseEntity<ApiResponse> ask(@RequestParam String topic) {
         try {

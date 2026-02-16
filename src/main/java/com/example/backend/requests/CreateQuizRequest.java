@@ -1,6 +1,5 @@
 package com.example.backend.requests;
 
-import com.example.backend.enums.QuestionType;
 import com.example.backend.enums.QuizMode;
 import com.example.backend.enums.QuizStatus;
 

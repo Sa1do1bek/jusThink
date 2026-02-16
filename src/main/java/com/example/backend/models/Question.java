@@ -50,5 +50,5 @@ public class Question {
 
 
     @Enumerated(EnumType.STRING)
-    private QuestionType questionType = QuestionType.MULTIPLE_CHOICE;
+    private QuestionType questionType = QuestionType.SINGLE_CHOICE;
 }
